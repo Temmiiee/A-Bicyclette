@@ -11,9 +11,9 @@ $context = stream_context_create($opts);
 // Obtenir l'adresse IP publique du client
 $clientIP = $_SERVER['REMOTE_ADDR'];
 
-if ($clientIP == '::1') {
-    // Si l'adresse IP est ::1 (localhost en IPv6), utilisez une adresse IP de test
-    $clientIP = '193.50.135.206'; // Remplacez ceci par l'adresse IP réelle que vous souhaitez utiliser
+if ($clientIP == '::1' or $clientIP == '127.0.0.1') {
+    // Si l'adresse IP est localhost utilisez une adresse IP de test
+    $clientIP = '193.50.135.206';
 }
 
 // Initialiser cURL pour l'API de géolocalisation ipapi
@@ -26,18 +26,25 @@ curl_close($chGeo);
 // Charger le XML de géolocalisation dans un objet SimpleXMLElement
 $geoXmlObj = simplexml_load_string($geoXML);
 
-// Extraire la latitude, la longitude, la ville et la timezone
+// Extraire la latitude, la longitude et la ville
 $latitude = $geoXmlObj->latitude;
 $longitude = $geoXmlObj->longitude;
 $ville = $geoXmlObj->city;
-$timezone = $geoXmlObj->timezone;
+
+// Vérifier si la latitude et la longitude sont valides
+if (empty($latitude) || empty($longitude)) {
+    $latitude = 48.692054;
+    $longitude = 6.184417;
+    $ville = "Nancy";
+}
 
 // Partie 2: Prévisions Météo
-// Initialiser cURL pour la deuxième API de prévisions météo
 
+// Initialiser cURL pour la deuxième API de prévisions météo
 $chMeteo = curl_init();
 curl_setopt($chMeteo, CURLOPT_URL, "https://www.infoclimat.fr/public-api/gfs/xml?_ll={$latitude},{$longitude}&_auth=UUtQRwJ8BiQCLwM0VyELIlY%2BU2ZeKAQjCnZVNl04XiMGbVIzUjIAZlI8UC1VelZgVHlQM1xnAzMHbFcvXy0AYVE7UDwCaQZhAm0DZld4CyBWeFMyXn4EIwpgVTNdLl48BmNSP1IvAGNSO1A2VXtWY1RkUDlcfAMkB2VXN18yAGZRMlA8AmMGYgJkA2RXeAsgVmNTNl4wBD0KblVkXTReOgZiUjRSMQA3UjxQMlV7VmBUZFAyXGsDMgdtVzZfMwB8US1QTQISBnkCLQMjVzILeVZ4U2ZePwRo&_c=7ad857e368077e9c63f7f8d93f9ed065&lang=fr");
 curl_setopt($chMeteo, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($chMeteo, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 
 // Exécuter la requête cURL
 $meteoXML = curl_exec($chMeteo);
